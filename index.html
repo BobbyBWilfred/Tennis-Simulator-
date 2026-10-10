@@ -137,12 +137,12 @@ const PT={2000:{l:[50,100,200,400,800,1300],w:2000,m:[140,210,320,520,880,1600],
 const $f=k=>k>=1000?'$'+(k/1000).toFixed(2).replace(/\.?0+$/,'')+'M':'$'+k+'K';
 const TOUR=E.map((d,i)=>i).filter(i=>typeof E[i][2]==='number'),DCI=E.findIndex(d=>d[2]==='DC');
 const freshEv=()=>E.map((d,i)=>d[2]==='OLY'?{st:0,rounds:[],r:0,seed:{},v:pick(TOUR)}:{st:0,rounds:[],r:0,seed:{}});
-const NAT={US:'United States',CA:'Canada',DE:'Germany',GB:'Great Britain',AU:'Australia',IT:'Italy',FR:'France',AR:'Argentina',BR:'Brazil',CN:'China',JP:'Japan',IN:'India'},DCN=Object.keys(NAT);
-const HOSTSF={US:['H'],CA:['H'],DE:['G','C'],GB:['G'],AU:['H'],IT:['C'],FR:['C'],JP:['H'],CN:['H'],AR:null,BR:null,IN:null};
+const NAT={US:'United States',CA:'Canada',DE:'Germany',GB:'Great Britain',AU:'Australia',IT:'Italy',FR:'France',AR:'Argentina',BR:'Brazil',CN:'China',JP:'Japan',IN:'India',ES:'Spain',KR:'South Korea',NO:'Norway',GR:'Greece'},DCN=Object.keys(NAT);
+const HOSTSF={US:['H'],CA:['H'],DE:['G','C'],GB:['G'],AU:['H'],IT:['C'],FR:['C'],JP:['H'],CN:['H'],AR:null,BR:null,IN:null,ES:['C'],KR:['H'],NO:['H'],GR:['H']};
 /* ===== 64-PLAYER ROSTER · CAREERS 18 -> 40 ===== */
 const START=2027,RET_AGE=40,START_AGE=18;
 const ageOf=p=>S.season-p.by,curAge=()=>S.season-START+START_AGE;
-// name | country | rating at 18 (best player 84; ties allowed). Mix: 32 Europe/S.America (23+9), 16 US/Canada (13+3), 16 Asia.
+// name | country | rating at 18 (best player 84; ties allowed). Updated: Mishti Mattu→IT, Vishwajith→NO, Jia Shah→GR.
 const ROSTER=`Bobby B Wilfred|DE|84|A
 Derrick Richard|US|84
 Akshat Majila|IT|82
@@ -153,7 +153,7 @@ Madhan|AR|79
 Rishwanth|DE|79
 Varun Ummapthy|CN|78
 Arkita Barua|GB|78
-Mishti Mattu|US|78
+Mishti Mattu|IT|78
 Vignesh N|BR|77
 Aravind Nayagam|CA|77
 Hema Surya|AU|77
@@ -168,7 +168,7 @@ Vimal|US|74
 Yogesh|JP|74
 Shyam Krishnan|AR|74
 PD|DK|74
-Vishwajith|US|73
+Vishwajith|NO|73
 Aravindhan|DE|73
 Shubam|CN|73
 Kevin Bose|GB|73
@@ -192,7 +192,7 @@ Saksham|CZ|69
 Jerome|CL|69
 Abhishek|KR|69
 Parth Tripathi|AR|69
-Jia Shah|US|69
+Jia Shah|GR|69
 Urvashi Rathod|HR|69
 Neha Sharma|GB|68
 Naman Singh|IN|68
@@ -217,6 +217,11 @@ S.news=S.news||[];S.hist=S.hist||[];S.oly=S.oly||[];S.dc=S.dc||[];S.h2h=S.h2h||(
 const UI={view:'cal',vi:0,rt:0,pm:'pts',q:'',m:null,pf:'all',hv:'slam',dv:'ed',dy:null,rv:'top',ry:null,ra:null,rb:null};
 const save=()=>{try{store.setItem(KEY,JSON.stringify(S))}catch(e){toast('Save failed')}};
 function toast(t){const d=document.createElement('div');d.className='toast';d.setAttribute('role','status');d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2200)}
+
+// ===== SAVE UPDATE v8: country changes + new Davis Cup format (16 nations, top-2 players, doubles) =====
+if(!(S.mig>=8)){[['Mishti Mattu','IT'],['Vishwajith','NO'],['Jia Shah','GR']].forEach(([n,c])=>{const p=S.players.find(x=>x.n===n&&x.c==='US');if(p)p.c=c});
+ const dv=S.ev&&S.ev[DCI];let rs=false;if(dv&&dv.groups&&!dv.v2&&dv.st!==2){S.ev[DCI]={st:0,rounds:[],r:0,seed:{}};rs=true}
+ S.mig=8;save();setTimeout(()=>toast(rs?'Save updated · old-format Davis Cup reset to the new 16-nation format':'Save updated · new countries + Davis Cup format'),400)}
 const P=i=>S.players[i],nm=i=>flag(P(i).c)+' '+P(i).n,absW=(s,i)=>(s-1)*52+E[i][4];
 const curW=()=>absW(S.season,Math.min(S.idx,E.length-1));
 const ptsOf=(p,W)=>p.res.reduce((a,r)=>absW(r.s,r.i)>W-52?a+r.p:a,0);
@@ -277,8 +282,11 @@ function startEvent(i){const ev=S.ev[i];if(ev.rounds.length)return;const rk=rank
  slots[0]=seeds[0];slots[63]=seeds[1];put(seeds.slice(2,4),[32,31]);put(seeds.slice(4,8),[15,16,47,48]);put(seeds.slice(8,16),[7,8,23,24,39,40,55,56]);
  seeds.forEach((id,k)=>{ev.seed[id]=k+1});let u=0;for(let k=0;k<64;k++)if(slots[k]==null)slots[k]=un[u++];
  ev.pos={};rk.forEach((id,k)=>ev.pos[id]=k+1);ev.rounds=[pairs(slots)];ev.r=0;ev.st=1}
-function setRes(mt,m,i){mt.w=m.w?mt.b:mt.a;mt.s=scoreStr(m);mt.ss=[m.setsWon[0],m.setsWon[1]];mt.gg=[0,1].map(k=>m.sets.reduce((a,x)=>a+x.g[k],0));if(i!=null)recM(mt,i)}
-function simMt(mt,i,o){const d=E[i],big=d[2]===2000||d[2]==='OLY',bo=(o&&o.bo)||(big?5:3),m=newMatch(P(mt.a),P(mt.b),sfOf(i),bo,bo===5);while(!m.done)award(m,buildPoint(m,true));setRes(mt,m,i)}
+function setRes(mt,m,i){mt.w=m.w?mt.b:mt.a;mt.s=scoreStr(m);mt.ss=[m.setsWon[0],m.setsWon[1]];mt.gg=[0,1].map(k=>m.sets.reduce((a,x)=>a+x.g[k],0));if(i!=null&&!mt.dbl)recM(mt,i)}
+// DOUBLES: a pair plays as one 'team player'. Real-life doubles traits: the stronger server carries the pair (serve is weighted toward the best server), a small overall serve edge (shorter points, volleys), the pair's average surface fit, and partnership chemistry (random per match, a little higher when both prefer the same surface).
+function dblTeam(ids,surf){const ps=ids.map(P),bn=p=>p.sf===surf?3:p.sf==='A'?1.5:0,av=k=>(ps[0][k]+ps[1][k])/2,fit=(bn(ps[0])+bn(ps[1]))/2,chem=gauss(0,2.5)+(ps[0].sf===ps[1].sf?1:0),x=fit+chem;
+ return{n:ps.map(p=>p.n.split(' ').pop()).join(' / '),c:ps[0].c,sf:'X',ct:0,sv:Math.max(ps[0].sv,ps[1].sv)*.35+av('sv')*.65+1.5+x,rn:av('rn')+x}}
+function simMt(mt,i,o){const d=E[i],big=d[2]===2000||d[2]==='OLY',bo=(o&&o.bo)||(big?5:3),m=mt.dbl?newMatch(dblTeam(mt.pa,sfOf(i)),dblTeam(mt.pb,sfOf(i)),sfOf(i),bo,bo===5):newMatch(P(mt.a),P(mt.b),sfOf(i),bo,bo===5);while(!m.done)award(m,buildPoint(m,true));setRes(mt,m,i)}
 function advance(i){const ev=S.ev[i],cur=ev.rounds[ev.r],oly=E[i][2]==='OLY';if(cur.some(x=>x.w==null))return;
  if(ev.r===5){if(oly){if(ev.bronze.w==null)return;finishOly(i)}else finish(i);return}
  if(oly&&ev.r===4){const l=x=>x.w===x.a?x.b:x.a;ev.bronze={a:l(cur[0]),b:l(cur[1]),w:null,s:''}}
@@ -307,23 +315,25 @@ function finishOly(i){const ev=S.ev[i],f=ev.rounds[5][0],b=ev.bronze,g=f.w,sv=f.
 const DC_ORD=[1,0,2];
 const mkTie=(ev,a,b,stage)=>({id:++ev.tid,a,b,r:[],w:null,sc:'',stage,bo:stage>=3?5:3});
 const tieSc=t=>{const s=[0,0];t.r.forEach(r=>{if(r.w!=null)s[r.w===r.a?0:1]++});return s};
-const allTies=ed=>[...ed.groups.flatMap(g=>g.ties),...(ed.sfs||[]),...(ed.fin?[ed.fin]:[])];
+const allTies=ed=>[...ed.groups.flatMap(g=>g.ties),...(ed.qfs||[]),...(ed.sfs||[]),...(ed.fin?[ed.fin]:[])];
 const findTie=(ev,id)=>allTies(ev).find(t=>t.id===id);
-const stageTies=ev=>ev.stage<3?ev.groups.map(g=>g.ties[ev.stage]):ev.stage===3?ev.sfs:[ev.fin];
-function nextR(ev,t){const n=t.r.length,ix=DC_ORD[n];return{a:ev.ros[t.a][ix],b:ev.ros[t.b][ix],w:null,s:'',day:n+1,bo:t.bo}}
+const stageTies=ev=>ev.stage<3?ev.groups.flatMap(g=>g.ties.filter(t=>t.stage===ev.stage)):ev.stage===3?ev.qfs:ev.stage===4?ev.sfs:[ev.fin];
+// Day 1: #2 v #2, Day 2: #1 v #1, Day 3 (only if the tie is level 1-1): doubles with the nation's two players
+function nextR(ev,t){const n=t.r.length;if(n===2)return{a:ev.ros[t.a][0],b:ev.ros[t.b][0],pa:ev.ros[t.a].slice(0,2),pb:ev.ros[t.b].slice(0,2),dbl:1,w:null,s:'',day:3,bo:t.bo};const ix=DC_ORD[n];return{a:ev.ros[t.a][ix],b:ev.ros[t.b][ix],w:null,s:'',day:n+1,bo:t.bo}}
 function afterRub(t){const sc=tieSc(t);if(sc[0]===2||sc[1]===2){t.w=sc[0]===2?t.a:t.b;t.sc=Math.max(...sc)+'-'+Math.min(...sc)}}
 function simTie(i,t){const ev=S.ev[i];while(t.w==null){const r=nextR(ev,t);simMt(r,i,{bo:t.bo});t.r.push(r);afterRub(t)}}
 function hostSurf(h,ros){const opts=HOSTSF[h]||['H','C','G'],bon=sf=>ros[h].reduce((a,id)=>{const p=P(id);return a+(p.sf===sf?3:p.sf==='A'?1.5:0)},0);return opts.slice().sort((a,b)=>bon(b)-bon(a))[0]}
-function dcSetup(){const rk=ranking(absW(S.season,DCI)).map(x=>x.p.id),pos={},ros={};rk.forEach((id,k)=>pos[id]=k+1);DCN.forEach(c=>ros[c]=[]);rk.forEach(id=>{const c=P(id).c;if(ros[c]&&ros[c].length<3)ros[c].push(id)});
+function dcSetup(){const rk=ranking(absW(S.season,DCI)).map(x=>x.p.id),pos={},ros={};rk.forEach((id,k)=>pos[id]=k+1);DCN.forEach(c=>ros[c]=[]);rk.forEach(id=>{const c=P(id).c;if(ros[c]&&ros[c].length<2)ros[c].push(id)});
  const sc=c=>ros[c].reduce((a,id)=>a+pos[id],0),rt=c=>ros[c].reduce((a,id)=>a+P(id).rt,0);let order=DCN.slice().sort((a,b)=>sc(a)-sc(b)||rt(b)-rt(a)||(a<b?-1:1));
  const prev=S.dc.length?S.dc[S.dc.length-1].champ:null;if(prev)order=[prev,...order.filter(c=>c!==prev)];return{ros,pos,order,prev}}
 // host + surface are fixed at the start of each season: 2027 host is random, afterwards the defending champion hosts
 function planDC(){const ev=S.ev[DCI];if(ev.host)return;const u=dcSetup();ev.host=u.prev||pick(DCN);ev.sf=hostSurf(ev.host,u.ros)}
 function startDC(i){const ev=S.ev[i];if(ev.groups)return;const u=dcSetup(),o=u.order;ev.ros=u.ros;ev.pos=u.pos;ev.seedN={};o.forEach((c,k)=>ev.seedN[c]=k+1);
  if(!ev.host)planDC();ev.tid=0;
- const p1=[o[0],...shuffle(o.slice(1,4))],p2=shuffle(o.slice(4,8)),p3=shuffle(o.slice(8,12));
- ev.groups=[0,1,2,3].map(k=>{const t=[p1[k],p2[k],p3[k]];return{n:'ABCD'[k],t,ties:[mkTie(ev,t[0],t[1],0),mkTie(ev,t[0],t[2],1),mkTie(ev,t[1],t[2],2)]}});
- ev.stage=0;ev.st=1;ev.sfs=[];ev.fin=null}
+ const p1=[o[0],...shuffle(o.slice(1,4))],p2=shuffle(o.slice(4,8)),p3=shuffle(o.slice(8,12)),p4=shuffle(o.slice(12,16));ev.v2=1;
+ // 16 nations in 4 pots of 4 -> 4 groups of 4, round robin over 3 matchdays (each team plays once per matchday)
+ ev.groups=[0,1,2,3].map(k=>{const t=[p1[k],p2[k],p3[k],p4[k]];return{n:'ABCD'[k],t,ties:[[0,3,0],[1,2,0],[0,2,1],[3,1,1],[0,1,2],[2,3,2]].map(([x,y,sg])=>mkTie(ev,t[x],t[y],sg))}});
+ ev.stage=0;ev.st=1;ev.qfs=[];ev.sfs=[];ev.fin=null}
 function gStand(g){const T={};g.t.forEach(c=>T[c]={c,pl:0,w:0,l:0,pts:0,rw:0,rl:0,sw:0,sl:0,gw:0,gl:0});
  g.ties.forEach(t=>{if(t.w==null)return;const A=T[t.a],B=T[t.b],W=t.w===t.a?A:B,L=t.w===t.a?B:A;A.pl++;B.pl++;W.w++;W.pts+=2;L.l++;
   t.r.forEach(r=>{const aw=r.w===r.a?1:0;A.rw+=aw;A.rl+=1-aw;B.rw+=1-aw;B.rl+=aw;A.sw+=r.ss[0];A.sl+=r.ss[1];B.sw+=r.ss[1];B.sl+=r.ss[0];A.gw+=r.gg[0];A.gl+=r.gg[1];B.gw+=r.gg[1];B.gl+=r.gg[0]})});return T}
@@ -334,25 +344,26 @@ function gOrder(g,fin){const T=gStand(g),L=g.t.map(c=>T[c]).sort((x,y)=>y.pts-x.
   else if(cl.length>2)cl.sort((x,y)=>(y.rw-y.rl)-(x.rw-x.rl)||(y.sw-y.sl)-(x.sw-x.sl)||(y.gw-y.gl)-(x.gw-x.gl)||(fin?Math.random()-.5:0));
   out.push(...cl);i=j}return out}
 function advDC(i){const ev=S.ev[i];if(!ev.groups||ev.st===2)return;if(stageTies(ev).some(t=>t.w==null))return;
- if(ev.stage===2){ev.groups.forEach(g=>{g.order=gOrder(g,true).map(x=>x.c)});const W=ev.groups.map(g=>g.order[0]);ev.sfs=[mkTie(ev,W[0],W[3],3),mkTie(ev,W[1],W[2],3)]}
- else if(ev.stage===3)ev.fin=mkTie(ev,ev.sfs[0].w,ev.sfs[1].w,4);
- else if(ev.stage===4){finishDC(i);return}
+ if(ev.stage===2){ev.groups.forEach(g=>{g.order=gOrder(g,true).map(x=>x.c)});const G=ev.groups.map(g=>g.order);ev.qfs=[mkTie(ev,G[0][0],G[1][1],3),mkTie(ev,G[1][0],G[0][1],3),mkTie(ev,G[2][0],G[3][1],3),mkTie(ev,G[3][0],G[2][1],3)]}
+ else if(ev.stage===3)ev.sfs=[mkTie(ev,ev.qfs[0].w,ev.qfs[1].w,4),mkTie(ev,ev.qfs[2].w,ev.qfs[3].w,4)];
+ else if(ev.stage===4)ev.fin=mkTie(ev,ev.sfs[0].w,ev.sfs[1].w,5);
+ else if(ev.stage===5){finishDC(i);return}
  ev.stage++}
 function simDCStage(i){startDC(i);const ev=S.ev[i];stageTies(ev).forEach(t=>simTie(i,t));advDC(i)}
 function simDC(i){startDC(i);while(S.ev[i].st!==2)simDCStage(i)}
-function finishDC(i){const ev=S.ev[i],f=ev.fin;ev.champ=f.w;ev.runner=f.w===f.a?f.b:f.a;ev.fs=f.sc;const sfT=new Set(ev.sfs.flatMap(t=>[t.a,t.b])),pz={},nat={};
- DCN.forEach(c=>ev.ros[c].forEach(id=>{nat[id]=c;pz[id]=c===ev.champ?750:c===ev.runner?400:sfT.has(c)?200:75}));
- allTies(ev).forEach(t=>t.r.forEach(r=>{pz[r.w]+=25}));
+function finishDC(i){const ev=S.ev[i],f=ev.fin;ev.champ=f.w;ev.runner=f.w===f.a?f.b:f.a;ev.fs=f.sc;const sfT=new Set(ev.sfs.flatMap(t=>[t.a,t.b])),qfT=new Set(ev.qfs.flatMap(t=>[t.a,t.b])),pz={},nat={};
+ DCN.forEach(c=>ev.ros[c].forEach(id=>{nat[id]=c;pz[id]=c===ev.champ?750:c===ev.runner?400:sfT.has(c)?200:qfT.has(c)?125:75}));
+ allTies(ev).forEach(t=>t.r.forEach(r=>{if(r.dbl)(r.w===r.a?r.pa:r.pb).forEach(id=>{pz[id]+=25});else pz[r.w]+=25}));
  Object.keys(pz).forEach(k=>{const p=P(+k);p.cp+=pz[k];p.res.push({s:S.season,i,p:0,$:pz[k],r:nat[k]===ev.champ?'W':'DC'})});
- S.dc.push({s:S.season,host:ev.host,sf:ev.sf,ros:ev.ros,seedN:ev.seedN,groups:ev.groups,sfs:ev.sfs,fin:ev.fin,champ:ev.champ,runner:ev.runner,fs:ev.fs,prize:pz});ev.st=2;bump(i);save()}
-const curEd=ev=>({s:S.season,host:ev.host,sf:ev.sf,ros:ev.ros,seedN:ev.seedN,groups:ev.groups,sfs:ev.sfs,fin:ev.fin,live:1});
+ S.dc.push({s:S.season,host:ev.host,sf:ev.sf,ros:ev.ros,seedN:ev.seedN,groups:ev.groups,qfs:ev.qfs,sfs:ev.sfs,fin:ev.fin,v2:1,champ:ev.champ,runner:ev.runner,fs:ev.fs,prize:pz});ev.st=2;bump(i);save()}
+const curEd=ev=>({s:S.season,host:ev.host,sf:ev.sf,ros:ev.ros,seedN:ev.seedN,groups:ev.groups,qfs:ev.qfs,sfs:ev.sfs,fin:ev.fin,v2:ev.v2,live:1});
 const eds=()=>{const o=S.dc.slice(),ev=S.ev[DCI];if(ev&&ev.groups&&ev.st!==2)o.push(curEd(ev));return o};
-function dcP(id){const o={ed:0,ties:0,rw:0,rl:0,sw:0,sl:0,gw:0,gl:0,ti:0,fin:0,$:0};
+function dcP(id){const o={ed:0,ties:0,rw:0,rl:0,sw:0,sl:0,gw:0,gl:0,dw:0,dl:0,dsw:0,dsl:0,ti:0,fin:0,$:0};
  eds().forEach(ed=>{const nat=Object.keys(ed.ros).find(k=>ed.ros[k].includes(id));if(!nat)return;o.ed++;if(ed.champ===nat)o.ti++;if(ed.champ===nat||ed.runner===nat)o.fin++;if(ed.prize&&ed.prize[id])o.$+=ed.prize[id];
-  allTies(ed).forEach(t=>{let pl=0;t.r.forEach(r=>{const sd=r.a===id?0:r.b===id?1:-1;if(sd<0)return;pl=1;r.w===id?o.rw++:o.rl++;o.sw+=r.ss[sd];o.sl+=r.ss[1-sd];o.gw+=r.gg[sd];o.gl+=r.gg[1-sd]});o.ties+=pl})});return o}
-function dcN(c){const o={ed:0,ti:0,fin:0,sf:0,tw:0,tl:0,rw:0,rl:0,sw:0,sl:0};
- eds().forEach(ed=>{if(!ed.groups.some(g=>g.t.includes(c)))return;o.ed++;if(ed.champ===c)o.ti++;if(ed.champ===c||ed.runner===c)o.fin++;if((ed.sfs||[]).some(t=>t.a===c||t.b===c))o.sf++;
-  allTies(ed).forEach(t=>{if(t.a!==c&&t.b!==c)return;const sd=t.a===c?0:1;if(t.w!=null)t.w===c?o.tw++:o.tl++;t.r.forEach(r=>{(r.w===r.a)===(sd===0)?o.rw++:o.rl++;o.sw+=r.ss[sd];o.sl+=r.ss[1-sd]})})});return o}
+  allTies(ed).forEach(t=>{let pl=0;t.r.forEach(r=>{if(r.dbl){const sd=(r.pa||[]).includes(id)?0:(r.pb||[]).includes(id)?1:-1;if(sd<0)return;pl=1;(r.w===r.a)===(sd===0)?o.dw++:o.dl++;o.dsw+=r.ss[sd];o.dsl+=r.ss[1-sd];return}const sd=r.a===id?0:r.b===id?1:-1;if(sd<0)return;pl=1;r.w===id?o.rw++:o.rl++;o.sw+=r.ss[sd];o.sl+=r.ss[1-sd];o.gw+=r.gg[sd];o.gl+=r.gg[1-sd]});o.ties+=pl})});return o}
+function dcN(c){const o={ed:0,ti:0,fin:0,sf:0,qf:0,tw:0,tl:0,rw:0,rl:0,sw:0,sl:0,dw:0,dl:0,dsw:0,dsl:0};
+ eds().forEach(ed=>{if(!ed.groups.some(g=>g.t.includes(c)))return;o.ed++;if(ed.champ===c)o.ti++;if(ed.champ===c||ed.runner===c)o.fin++;if((ed.sfs||[]).some(t=>t.a===c||t.b===c))o.sf++;if((ed.qfs||[]).some(t=>t.a===c||t.b===c))o.qf++;
+  allTies(ed).forEach(t=>{if(t.a!==c&&t.b!==c)return;const sd=t.a===c?0:1;if(t.w!=null)t.w===c?o.tw++:o.tl++;t.r.forEach(r=>{const win=(r.w===r.a)===(sd===0);if(r.dbl){win?o.dw++:o.dl++;o.dsw+=r.ss[sd];o.dsl+=r.ss[1-sd]}else{win?o.rw++:o.rl++;o.sw+=r.ss[sd];o.sl+=r.ss[1-sd]}})})});return o}
 
 /* ===== VIEWS ===== */
 const chip=s=>`<span class="chip ${s}">${SN[s]}</span>`,tier=t=>`<span class="t${t}">${typeof t==='number'?t+' · ':''}${TN[t]}</span>`;
@@ -416,19 +427,19 @@ function hTit(){const rows=S.players.map(p=>({p,d:dcP(p.id),m:p.med||[]})).filte
 function hYe(){return `<div class="card"><table class="s1"><tr><th>Year<th>#1<th>#2<th>#3<th>#4<th>#5</tr>`+(S.hist.length?S.hist.slice().reverse().map(y=>`<tr><td><b>${y.s}</b>`+y.top.map(([id,p])=>`<td>${nm(id)}<br><span class=mut>${p} pts</span>`).join('')+'</tr>').join(''):'<tr><td colspan=6 class=mut>Recorded at the end of each season.</tr>')+'</table></div>'}
 function vHist(){const subs=[['slam','Grand Slams'],['oly','Olympics'],['dc','Davis Cup'],['tit','All-Time Titles'],['ye','Year-End Top 5'],['rec','Records'],['hof','🏛️ Hall of Fame']];
  return `<div class="sh"><h2>History</h2></div><div class="rt">${subs.map(([k,l])=>`<button class="b ${UI.hv===k?'on':''}" data-a="hv" data-x="${k}">${l}</button>`).join('')}</div>`+({slam:hSlam,oly:hOly,dc:hDc,tit:hTit,ye:hYe,rec:hRec,hof:hHof})[UI.hv]()}
-const STG=['Group · Matchday 1','Group · Matchday 2','Group · Matchday 3','Semifinals','Final'];
-function tieHTML(t,ed,ev){const sc=tieSc(t),cur=ev&&t.stage===ev.stage&&t.w==null,n=t.r.length,ix=DC_ORD[n];
+const STG=['Group · Matchday 1','Group · Matchday 2','Group · Matchday 3','Quarterfinals','Semifinals','Final'];
+function tieHTML(t,ed,ev){const sc=tieSc(t),cur=ev&&t.stage===ev.stage&&t.w==null,n=t.r.length,ix=DC_ORD[n],dn=ids=>ids.map(id=>P(id).n).join(' / '),nxt=()=>ed.v2&&n===2?`Doubles: ${dn(ed.ros[t.a].slice(0,2))} v ${dn(ed.ros[t.b].slice(0,2))}`:`${P(ed.ros[t.a][ix]).n} v ${P(ed.ros[t.b][ix]).n}`;
  return `<div class="mc" style="margin-top:8px"><div class="p ${t.w===t.a?'w':''}"><span>${natN(t.a)}</span><span>${sc[0]}</span></div><div class="p ${t.w===t.b?'w':''}"><span>${natN(t.b)}</span><span>${sc[1]}</span></div>`
- +t.r.map(r=>`<div class="rb"><span class="mut">Day ${r.day}</span> ${P(r.a).n} v ${P(r.b).n} · <b>${P(r.w).n}</b> ${r.s}</div>`).join('')
- +(t.w==null&&n<3?`<div class="rb mut">${cur?'Next · ':''}Day ${n+1}: ${P(ed.ros[t.a][ix]).n} v ${P(ed.ros[t.b][ix]).n}</div>`:'')
+ +t.r.map(r=>r.dbl?`<div class="rb"><span class="mut">Day ${r.day} · Doubles</span> ${dn(r.pa)} v ${dn(r.pb)} · <b>${dn(r.w===r.a?r.pa:r.pb)}</b> ${r.s}</div>`:`<div class="rb"><span class="mut">Day ${r.day}</span> ${P(r.a).n} v ${P(r.b).n} · <b>${P(r.w).n}</b> ${r.s}</div>`).join('')
+ +(t.w==null&&n<3?`<div class="rb mut">${cur?'Next · ':''}Day ${n+1}: ${nxt()}</div>`:'')
  +(cur?`<div class="f"><span>Best of ${t.bo} sets</span><span><button class="b g s" data-a="dcRub" data-x="${t.id}">Sim Rubber</button> <button class="b s" data-a="dcPlay" data-x="${t.id}">Play</button> <button class="b s" data-a="dcTie" data-x="${t.id}">Sim Tie</button></span></div>`:'')+'</div>'}
 function edView(ed,ev){const nsd=c=>ed.seedN&&ed.seedN[c]?` <small class="mut">(${ed.seedN[c]})</small>`:'';
  let h=`<p><b>${ed.s}</b> · Host ${natN(ed.host)} · ${chip(ed.sf)}${ed.champ?` · 🏆 <b>${natN(ed.champ)}</b> d. ${natN(ed.runner)} ${ed.fs}`:''}${ev?` · <b>${STG[ev.stage]}</b>`:''}</p><div class="dg">`;
  ed.groups.forEach(g=>{const T=gStand(g),ord=g.order?g.order.map(c=>T[c]):gOrder(g,false);
-  h+=`<div class="card" style="padding:10px"><b>Group ${g.n}</b><table class="s1" style="margin-top:6px"><tr><th>Team<th class=n>P<th class=n>W<th class=n>L<th class=n>Pts<th class=n>Rub<th class=n>Sets</tr>${ord.map((x,k)=>`<tr><td>${g.order&&k===0?'✅ ':''}${natN(x.c)}${nsd(x.c)}<td class=n>${x.pl}<td class=n>${x.w}<td class=n>${x.l}<td class=n><b>${x.pts}</b><td class=n>${x.rw}-${x.rl}<td class=n>${x.sw}-${x.sl}</tr>`).join('')}</table>${g.ties.map(t=>tieHTML(t,ed,ev)).join('')}</div>`});
- h+='</div>';const ko=(l,ts)=>`<div class="sh" style="margin-top:14px"><h3>${l}</h3></div><div class="dg">${ts.length?ts.map(t=>`<div>${tieHTML(t,ed,ev)}</div>`).join(''):'<p class="mut">Decided after the group stage.</p>'}</div>`;
- return h+ko('Semifinals · first to 3 sets',ed.sfs||[])+ko('Final · first to 3 sets',ed.fin?[ed.fin]:[])}
-function dcPreview(){const u=dcSetup(),ev=S.ev[DCI];return `<p><b>Host:</b> ${natN(ev.host)} · <b>Surface:</b> ${chip(ev.sf)}</p><p class="mut">Teams are the top 3 ranked players of each nation. Seeding is by team strength${u.prev?` — defending champion ${natN(u.prev)} is automatically seed 1 and hosts`:'; the 2027 host is drawn at random'}. Surface: host nations with a home tournament use that surface; the others pick the surface that suits their team.</p><div class="card"><table class="s1"><tr><th>Seed<th>Nation<th>#1<th>#2<th>#3</tr>${u.order.map((c,k)=>`<tr><td class=n>${k+1}<td>${natN(c)}${c===u.prev?' 🏠':''}${u.ros[c].map(id=>`<td>${nm(id)} <small class="mut">#${u.pos[id]}</small>`).join('')}</tr>`).join('')}</table></div>`}
+  h+=`<div class="card" style="padding:10px"><b>Group ${g.n}</b><table class="s1" style="margin-top:6px"><tr><th>Team<th class=n>P<th class=n>W<th class=n>L<th class=n>Pts<th class=n>Rub<th class=n>Sets</tr>${ord.map((x,k)=>`<tr><td>${g.order&&(ed.v2?k<2:k===0)?'✅ ':''}${natN(x.c)}${nsd(x.c)}<td class=n>${x.pl}<td class=n>${x.w}<td class=n>${x.l}<td class=n><b>${x.pts}</b><td class=n>${x.rw}-${x.rl}<td class=n>${x.sw}-${x.sl}</tr>`).join('')}</table>${g.ties.map(t=>tieHTML(t,ed,ev)).join('')}</div>`});
+ h+='</div>';const ko=(l,ts,m)=>`<div class="sh" style="margin-top:14px"><h3>${l}</h3></div><div class="dg">${ts.length?ts.map(t=>`<div>${tieHTML(t,ed,ev)}</div>`).join(''):`<p class="mut">${m}</p>`}</div>`;
+ return h+(ed.v2?ko('Quarterfinals · first to 3 sets',ed.qfs||[],'Decided after the group stage — top 2 from each group.'):'')+ko('Semifinals · first to 3 sets',ed.sfs||[],ed.v2?'Decided after the quarterfinals.':'Decided after the group stage.')+ko('Final · first to 3 sets',ed.fin?[ed.fin]:[],'Decided after the semifinals.')}
+function dcPreview(){const u=dcSetup(),ev=S.ev[DCI];return `<p><b>Host:</b> ${natN(ev.host)} · <b>Surface:</b> ${chip(ev.sf)}</p><p class="mut">16 nations in 4 groups of 4 (round robin); the top 2 of each group reach the quarterfinals, then semifinals and the final. Each nation fields its top 2 ranked players: Day 1 is #2 v #2, Day 2 is #1 v #1, and if the tie is level 1-1 a doubles match decides it. Seeding is by team strength${u.prev?` — defending champion ${natN(u.prev)} is automatically seed 1 and hosts`:'; the 2027 host is drawn at random'}. Surface: host nations with a home tournament use that surface; the others pick the surface that suits their team.</p><div class="card"><table class="s1"><tr><th>Seed<th>Nation<th>#1<th>#2</tr>${u.order.map((c,k)=>`<tr><td class=n>${k+1}<td>${natN(c)}${c===u.prev?' 🏠':''}${u.ros[c].map(id=>`<td>${nm(id)} <small class="mut">#${u.pos[id]}</small>`).join('')}</tr>`).join('')}</table></div>`}
 function dcEd(){const ev=S.ev[DCI],hd=held(DCI),ys=[...new Set([...eds().map(e=>e.s),...(hd?[S.season]:[])])].sort();
  if(!ys.length)return '<p class="mut">No Davis Cup yet — the first Cup is played in 2027, then every year, in the middle of the season.</p>';
  const y=ys.includes(UI.dy)?UI.dy:ys[ys.length-1];
@@ -437,15 +448,15 @@ function dcEd(){const ev=S.ev[DCI],hd=held(DCI),ys=[...new Set([...eds().map(e=>
  if(y===S.season&&hd&&ev.st!==2)return chips+edView(ev&&{...ev,s:S.season},ev);
  return chips+edView(S.dc.find(e=>e.s===y),null)}
 function dcNat(){const rows=DCN.map(c=>({c,...dcN(c)})).sort((a,b)=>b.ti-a.ti||b.fin-a.fin||b.tw-a.tw||(a.c<b.c?-1:1));
- return `<div class="card"><table class="s1"><tr><th>Nation<th class=n>Ed.<th class=n>Titles<th class=n>Finals<th class=n>SF<th class=n>Ties W-L<th class=n>Rubbers W-L<th class=n>Sets W-L</tr>${rows.map(r=>`<tr><td>${natN(r.c)}<td class=n>${r.ed}<td class=n><b>${r.ti}</b><td class=n>${r.fin}<td class=n>${r.sf}<td class=n>${r.tw}-${r.tl}<td class=n>${r.rw}-${r.rl}<td class=n>${r.sw}-${r.sl}</tr>`).join('')}</table></div>`}
+ return `<div class="card"><table class="s1"><tr><th>Nation<th class=n>Ed.<th class=n>Titles<th class=n>Finals<th class=n>SF<th class=n>QF<th class=n>Ties W-L<th class=n>Singles W-L<th class=n>Doubles W-L<th class=n>Sets W-L<th class=n>Dbl sets</tr>${rows.map(r=>`<tr><td>${natN(r.c)}<td class=n>${r.ed}<td class=n><b>${r.ti}</b><td class=n>${r.fin}<td class=n>${r.sf}<td class=n>${r.qf}<td class=n>${r.tw}-${r.tl}<td class=n>${r.rw}-${r.rl}<td class=n>${r.dw}-${r.dl}<td class=n>${r.sw}-${r.sl}<td class=n>${r.dsw}-${r.dsl}</tr>`).join('')}</table></div>`}
 function dcPl(){const rows=S.players.map(p=>({p,d:dcP(p.id)})).filter(x=>x.d.ed).sort((a,b)=>b.d.ti-a.d.ti||b.d.rw-a.d.rw||(b.d.rw-b.d.rl)-(a.d.rw-a.d.rl)||a.p.id-b.p.id);
- return `<p class="hint mut">Tap a player to open their profile</p><div class="card" style="max-height:78vh"><table class="s1"><tr><th>Player<th class=n>Ed.<th class=n>Ties<th class=n>Rubbers W-L<th class=n>Win%<th class=n>Sets W-L<th class=n>Games W-L<th class=n>Titles<th class=n>Finals<th class=n>Prize</tr>`+(rows.length?rows.map(({p,d})=>`<tr data-a="prof" data-x="${p.id}" style="cursor:pointer"><td>${nm(p.id)}<td class=n>${d.ed}<td class=n>${d.ties}<td class=n><b>${d.rw}-${d.rl}</b><td class=n>${d.rw+d.rl?Math.round(100*d.rw/(d.rw+d.rl))+'%':'–'}<td class=n>${d.sw}-${d.sl}<td class=n>${d.gw}-${d.gl}<td class=n>${d.ti}<td class=n>${d.fin}<td class=n>${$f(d.$)}</tr>`).join(''):'<tr><td colspan=10 class=mut>Nothing recorded yet.</tr>')+'</table></div>'}
+ return `<p class="hint mut">Tap a player to open their profile</p><div class="card" style="max-height:78vh"><table class="s1"><tr><th>Player<th class=n>Ed.<th class=n>Ties<th class=n>Singles W-L<th class=n>Win%<th class=n>Doubles W-L<th class=n>Dbl sets<th class=n>Sets W-L<th class=n>Games W-L<th class=n>Titles<th class=n>Finals<th class=n>Prize</tr>`+(rows.length?rows.map(({p,d})=>`<tr data-a="prof" data-x="${p.id}" style="cursor:pointer"><td>${nm(p.id)}<td class=n>${d.ed}<td class=n>${d.ties}<td class=n><b>${d.rw}-${d.rl}</b><td class=n>${d.rw+d.rl?Math.round(100*d.rw/(d.rw+d.rl))+'%':'–'}<td class=n>${d.dw}-${d.dl}<td class=n>${d.dsw}-${d.dsl}<td class=n>${d.sw}-${d.sl}<td class=n>${d.gw}-${d.gl}<td class=n>${d.ti}<td class=n>${d.fin}<td class=n>${$f(d.$)}</tr>`).join(''):'<tr><td colspan=12 class=mut>Nothing recorded yet.</tr>')+'</table></div>'}
 function vDC(){const ev=S.ev[DCI],hd=held(DCI),subs=[['ed','Edition'],['nat','Nations'],['pl','Players']];let ctl='';
  if(hd&&ev.st!==2){const ok=DCI===S.idx;ctl=!ev.groups?`<button class="b" data-a="dcStart" ${ok?'':'disabled'}>Make Groups</button>`:'';
   ctl+=` <button class="b g" data-a="dcStage" ${ok?'':'disabled'}>Sim Stage</button> <button class="b" data-a="dcAll" ${ok?'':'disabled'}>Sim Cup</button>`}
  return `<div class="sh"><h2>Davis Cup</h2><div>${ctl}</div></div><div class="rt">${subs.map(([k,l])=>`<button class="b ${UI.dv===k?'on':''}" data-a="dv" data-x="${k}">${l}</button>`).join('')}</div>`+({ed:dcEd,nat:dcNat,pl:dcPl})[UI.dv]()}
 function profExtra0(p){const m=p.med||[],c=k=>m.filter(x=>x.m===k).length,s=dcP(p.id);
- return `<h3>Olympic medals</h3><p>🥇 ${c('G')} · 🥈 ${c('S')} · 🥉 ${c('B')}${m.length?` <span class="mut">(${m.map(x=>x.s+' '+IC[x.m]).join(', ')})</span>`:''}</p><h3>Davis Cup</h3><div class="grid" style="padding:10px 0">${[['Editions',s.ed],['Ties played',s.ties],['Rubbers W-L',s.rw+'-'+s.rl],['Sets W-L',s.sw+'-'+s.sl],['Cup titles',s.ti],['Finals',s.fin],['Cup prize money',$f(s.$)]].map(([l,v])=>`<div class="mc" style="text-align:center"><span class="mut">${l}</span><h2>${v}</h2></div>`).join('')}</div>`}
+ return `<h3>Olympic medals</h3><p>🥇 ${c('G')} · 🥈 ${c('S')} · 🥉 ${c('B')}${m.length?` <span class="mut">(${m.map(x=>x.s+' '+IC[x.m]).join(', ')})</span>`:''}</p><h3>Davis Cup</h3><div class="grid" style="padding:10px 0">${[['Editions',s.ed],['Ties played',s.ties],['Singles W-L',s.rw+'-'+s.rl],['Doubles W-L',s.dw+'-'+s.dl],['Sets W-L',s.sw+'-'+s.sl],['Cup titles',s.ti],['Finals',s.fin],['Cup prize money',$f(s.$)]].map(([l,v])=>`<div class="mc" style="text-align:center"><span class="mut">${l}</span><h2>${v}</h2></div>`).join('')}</div>`}
 const stTxt=p=>p.rs?`<span class="tag r">Retired ${p.rs}</span>`:'<span class="tag n">Active</span>';
 const plRows=q=>S.players.slice().sort((a,b)=>(!!a.rs-!!b.rs)||(a.rs?b.rs-a.rs:0)||b.rt-a.rt||a.id-b.id).filter(p=>(UI.pf==='all'||(UI.pf==='ret')===!!p.rs)&&(!q||p.n.toLowerCase().includes(q)||p.c.toLowerCase()===q)).map(p=>`<tr class="${p.rs?'rtd':''}" data-a="prof" data-x="${p.id}" style="cursor:pointer"><td>${nm(p.id)}<td class=n>${p.rs?p.rs-p.by:ageOf(p)}<td>${stTxt(p)}<td class=n><b>${p.rt}</b><td class=n>${p.hi||p.rt}<td class=n>${p.sv}<td class=n>${p.rn}<td>${p.sf==='A'?'All-Court':SN[p.sf]}<td class=n>${p.ct}<td class=n>${p.cs}<td class=n>${p.cm}<td class=n>${p.c5}</tr>`).join('');
 const vPl=()=>`<div class="sh"><h2>Players <span class="sub">tap a row to view or edit</span></h2></div><div class="rt">${[['all','All'],['act','Active'],['ret','Retired']].map(([k,l])=>`<button class="b ${UI.pf===k?'on':''}" data-a="pf" data-x="${k}">${l}</button>`).join('')}</div><input id="q" type="search" autocomplete="off" enterkeyhint="search" aria-label="Search players" placeholder="Search player or country code…" value="${UI.q}"><div class="card" style="max-height:78vh"><table class="plt"><tr><th>Player<th class=n>Age<th>Status<th class=n>Rating<th class=n>Best<th class=n>Serve<th class=n>Return<th>Surface<th class=n>Titles<th class=n>Slams<th class=n>Masters<th class=n>500s</tr><tbody id="rk">${plRows(UI.q.toLowerCase())}</tbody></table></div>`;
@@ -589,7 +600,7 @@ const A={
  dcStart:()=>{startDC(DCI);save();render()},dcStage:()=>{simDCStage(DCI);save();render()},dcAll:()=>{simDC(DCI);save();toast('Davis Cup: '+NAT[S.ev[DCI].champ]);render()},
  dcRub:x=>{const ev=S.ev[DCI],t=findTie(ev,+x),r=nextR(ev,t);simMt(r,DCI,{bo:t.bo});t.r.push(r);afterRub(t);advDC(DCI);save();render()},
  dcTie:x=>{const ev=S.ev[DCI];simTie(DCI,findTie(ev,+x));advDC(DCI);save();render()},
- dcPlay:x=>{const ev=S.ev[DCI],t=findTie(ev,+x),r=nextR(ev,t);UI.m={m:newMatch(P(r.a),P(r.b),ev.sf,t.bo,t.bo===5),i:DCI,mt:r,tie:t,rl:`${NAT[t.a]} v ${NAT[t.b]} · Day ${r.day}`,sd:[]};renderM()},
+ dcPlay:x=>{const ev=S.ev[DCI],t=findTie(ev,+x),r=nextR(ev,t);UI.m={m:newMatch(r.dbl?dblTeam(r.pa,ev.sf):P(r.a),r.dbl?dblTeam(r.pb,ev.sf):P(r.b),ev.sf,t.bo,t.bo===5),i:DCI,mt:r,tie:t,rl:`${NAT[t.a]} v ${NAT[t.b]} · Day ${r.day}${r.dbl?' · Doubles':''}`,sd:[]};renderM()},
  mm:x=>{({shot:stepShot,point:stepPoint,game:stepGame,set:stepSet,match:stepMatch})[x](UI.m.m);recordM();renderM()},
  closeM:()=>{UI.m=null;renderM()},
  restart:()=>{if(confirm('Restart from 2027? The original 64-player roster returns at age 18 with its starting ratings. Your edits to those players\' name, country, surface, ratings and age are kept; results, rankings and career titles reset.')){const base=genPlayers();S={season:2027,idx:0,players:base.map((b,i)=>{const p=S.players[i],o=p.o||{},q={...b,n:p.n,c:p.c,sf:p.sf,o:p.o};['rt','sv','rn','by'].forEach(k=>{if(o[k]!=null)q[k]=o[k]});q.hi=q.rt;return q}),ev:freshEv(),slams:[],news:[],hist:[],oly:[],dc:[],h2h:{},ups:[],bu:{},rc:[],ms:[],done:false};UI.view='cal';UI.m=null;save();render()}}};
