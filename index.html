@@ -275,9 +275,9 @@ const sfOf=i=>{const d=E[i],ev=S.ev[i];return d[2]==='OLY'?E[ev.v][3]:d[2]==='DC
 const bump=i=>{S.idx=Math.max(S.idx,i+1);while(S.idx<E.length&&!held(S.idx))S.idx++;tick(absW(S.season,i))};
 const natN=c=>flag(c)+' '+NAT[c];
 // ===== SAVE UPDATE v9: Laver Cup + key-meeting log for head-to-heads =====
-if(!(S.mig>=9)){while(S.ev.length<E.length)S.ev.push({st:0,rounds:[],r:0,seed:{}});S.lc=S.lc||[];
+if(!(S.mig>=9))try{while(S.ev.length<E.length)S.ev.push({st:0,rounds:[],r:0,seed:{}});S.lc=S.lc||[];
  const had=Object.keys(S.h2h||{}).length>0;if(!S.hl){S.hl={};S.hlt=had?S.season*100+S.idx:START*100}
- while(S.idx<E.length&&!held(S.idx))S.idx++;S.mig=9;save();if(had)setTimeout(()=>toast('Save updated · Laver Cup added + head-to-head match log'),700)}
+ while(S.idx<E.length&&!held(S.idx))S.idx++;S.mig=9;save();if(had)setTimeout(()=>toast('Save updated · Laver Cup added + head-to-head match log'),700)}catch(e){console.error('mig9',e)}
 /* ===== EVENTS ===== */
 const pairs=a=>{const o=[];for(let i=0;i<a.length;i+=2)o.push({a:a[i],b:a[i+1],w:null,s:''});return o};
 function bracketOrder(n){let a=[1];while(a.length<n){const m=a.length*2;a=a.flatMap(x=>[x,m+1-x])}return a}
@@ -695,4 +695,15 @@ const A={
  lcRub:()=>{lcStep(LCI);save();render()},lcDay:()=>{simLCDay(LCI);save();render()},
  lcAll:()=>{simLC(LCI);save();toast('Laver Cup: '+LCT[S.ev[LCI].champ]);render()},
  lcPlay:()=>{startLC(LCI);const L=S.ev[LCI].lc;if(L.w!=null)return;const r=lcNext(L);UI.m={m:newMatch(r.dbl?dblTeam(r.pa,'H'):P(r.a),r.dbl?dblTeam(r.pb,'H'):P(r.b),'H',r.bo,r.bo===5),i:LCI,mt:r,lc:L,rl:`Laver Cup · Day ${r.day}${r.dbl?' · Doubles':' · Singles'}`,sd:[]};renderM()},
- restart:()=>{if(confirm('Restart from 2027? The original 64-player roster returns at age 18 with its starting ratings. Your edits to those players\' name, country, surface, ratings and age are kept; results, rankings and career titles reset.')){const base=genPlayers();S={season:2027,idx:0,players:base.map((b,i)=>{const p=S.players[i],o=p.o||{},q={...b,n:p.n,c:p.c,sf:p.sf,o:p.o};['rt','sv','rn','by'].forEach(k=>{if(o[k]!=null)q[k]=o[k]});q.hi=q.rt;return q}),ev:freshEv(),slams:[],news:[],hist:[],oly:[],dc:[],h2h:{},ups:[],bu:{},rc:[],ms:[],lc:[],hl:{},hlt:START*100,mig:9,done:false};UI.view='cal';UI.m=null;save();rend
+ restart:()=>{if(confirm('Restart from 2027? The original 64-player roster returns at age 18 with its starting ratings. Your edits to those players\' name, country, surface, ratings and age are kept; results, rankings and career titles reset.')){const base=genPlayers();S={season:2027,idx:0,players:base.map((b,i)=>{const p=S.players[i],o=p.o||{},q={...b,n:p.n,c:p.c,sf:p.sf,o:p.o};['rt','sv','rn','by'].forEach(k=>{if(o[k]!=null)q[k]=o[k]});q.hi=q.rt;return q}),ev:freshEv(),slams:[],news:[],hist:[],oly:[],dc:[],h2h:{},ups:[],bu:{},rc:[],ms:[],lc:[],hl:{},hlt:START*100,mig:9,done:false};UI.view='cal';UI.m=null;save();render()}}};
+document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(t)A[t.dataset.a](t.dataset.x)});
+document.addEventListener('keydown',e=>{const t=e.target;
+ if((e.key==='Enter'||e.key===' ')&&t.matches&&t.matches('[data-a]:not(button)')){e.preventDefault();t.click()}
+ if(e.key==='Escape'){if(UI.more){UI.more=false;nav()}else if($('#proot').firstChild)A.closeP();else if(UI.m)A.closeM()}});
+document.addEventListener('change',e=>{const t=e.target.closest('[data-ch]');if(t){UI[t.dataset.ch]=+t.value;render()}});
+try{render()}catch(err){const esc=t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+ $('#main').innerHTML='<div class="card" style="padding:16px"><h2>Couldn\'t draw the page</h2><p class="mut">Your saved game may be the cause. Download a backup first, then reset if needed.</p><pre style="white-space:pre-wrap;font-size:12px">'+esc(err&&err.message||err)+'\n'+esc((err&&err.stack||'').slice(0,500))+'</pre><p><button class="b g" id="bkp">Download save backup</button> <button class="b r" id="rst">Reset save</button></p></div>';
+ $('#bkp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([store.getItem(KEY)||''],{type:'application/json'}));a.download='baseline-tour-save.json';a.click()};
+ $('#rst').onclick=()=>{if(confirm('Erase the saved game and start fresh from 2027?')){store.removeItem(KEY);location.reload()}}}
+})();
+</script></body></html>
